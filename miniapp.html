@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Elite Life · FLSHM S4</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black:     #000000;
+    --surface:   #0a0a0a;
+    --card:      #111111;
+    --border:    #1e1e1e;
+    --border2:   #2a2a2a;
+    --cyan:      #00e5ff;
+    --cyan-dim:  rgba(0,229,255,0.12);
+    --cyan-glow: rgba(0,229,255,0.25);
+    --violet:    #b44dff;
+    --violet-dim:rgba(180,77,255,0.12);
+    --green:     #00ff88;
+    --green-dim: rgba(0,255,136,0.12);
+    --red:       #ff3d5a;
+    --red-dim:   rgba(255,61,90,0.12);
+    --amber:     #ffb400;
+    --text:      #f0f0f0;
+    --muted:     #666;
+    --muted2:    #444;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+    --r:  12px;
+    --r2: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--black); color: var(--text);
+    font-family: var(--font-body); font-size: 14px;
+    min-height: 100vh; -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(0,0,0,0.92); backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border); padding: 14px 16px 12px;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .logo { font-family: var(--font-head); font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--cyan); text-shadow: 0 0 20px var(--cyan-glow); }
+  .logo span { color: var(--text); }
+  .user-badge { display: flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--border2); border-radius: 20px; padding: 4px 10px 4px 6px; font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+  .user-avatar { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--violet)); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000; }
+
+  /* SEARCH */
+  .search-wrap { position: relative; }
+  .search-input { width: 100%; background: var(--card); border: 1px solid var(--border2); border-radius: var(--r2); color: var(--text); font-family: var(--font-body); font-size: 13px; padding: 9px 12px 9px 36px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
+  .search-input::placeholder { color: var(--muted2); }
+  .search-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-dim); }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; display: none; line-height: 1; padding: 2px; }
+
+  /* NAV */
+  .nav { display: flex; gap: 4px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn { flex-shrink: 0; background: none; border: 1px solid var(--border2); border-radius: 20px; color: var(--muted); font-family: var(--font-body); font-size: 12px; font-weight: 500; padding: 6px 14px; cursor: pointer; transition: all 0.18s; white-space: nowrap; }
+  .nav-btn.active { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 8px var(--cyan-dim); }
+  .nav-btn:active { transform: scale(0.96); }
+
+  /* MAIN */
+  .main { flex: 1; padding: 16px; }
+  .section-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; padding-left: 2px; }
+
+  /* MODULE CARDS */
+  .modules-grid { display: flex; flex-direction: column; gap: 8px; }
+  .module-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; transition: border-color 0.18s; }
+  .module-card:active { transform: scale(0.99); }
+  .module-card.open { border-color: var(--border2); }
+  .module-header { display: flex; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; }
+  .module-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .module-info { flex: 1; min-width: 0; }
+  .module-name { font-family: var(--font-head); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .module-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .module-chevron { color: var(--muted2); font-size: 12px; transition: transform 0.2s; flex-shrink: 0; }
+  .module-card.open .module-chevron { transform: rotate(90deg); }
+
+  /* FILE LIST */
+  .file-list { border-top: 1px solid var(--border); display: none; flex-direction: column; }
+  .module-card.open .file-list { display: flex; }
+  .file-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .file-row:last-child { border-bottom: none; }
+  .file-row:active { background: rgba(255,255,255,0.03); }
+  .file-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .file-icon.doc   { background: rgba(0,229,255,0.1); }
+  .file-icon.audio { background: rgba(180,77,255,0.1); }
+  .file-icon.video { background: rgba(0,255,136,0.1); }
+  .file-icon.photo { background: rgba(255,180,0,0.1); }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-tag { font-family: var(--font-mono); font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .dl-btn { background: var(--cyan-dim); border: 1px solid rgba(0,229,255,0.3); border-radius: 6px; color: var(--cyan); font-size: 15px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+  .dl-btn:active { background: var(--cyan); color: #000; transform: scale(0.92); }
+  .dl-btn.spin { animation: dlspin 0.8s linear infinite; pointer-events: none; }
+  @keyframes dlspin { to { transform: rotate(360deg); } }
+  .dl-btn.del-btn { background: var(--red-dim); border-color: rgba(255,61,90,0.3); color: var(--red); }
+  .get-all-btn { margin: 10px 14px 12px; background: linear-gradient(135deg, var(--cyan-dim), rgba(180,77,255,0.08)); border: 1px solid rgba(0,229,255,0.25); border-radius: var(--r2); color: var(--cyan); font-family: var(--font-body); font-size: 12px; font-weight: 500; padding: 9px 14px; cursor: pointer; width: calc(100% - 28px); text-align: center; transition: all 0.15s; }
+  .get-all-btn:active { opacity: 0.7; transform: scale(0.98); }
+
+  /* SEARCH RESULTS */
+  .search-results { display: flex; flex-direction: column; gap: 6px; }
+  .search-result-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); display: flex; align-items: center; gap: 10px; padding: 11px 13px; }
+  .search-module-tag { font-family: var(--font-mono); font-size: 9px; color: var(--violet); margin-top: 2px; }
+  .no-results { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  .no-results span { font-size: 32px; display: block; margin-bottom: 10px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 14px; text-align: center; }
+  .stat-card.full { grid-column: 1 / -1; }
+  .stat-num { font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--cyan); text-shadow: 0 0 16px var(--cyan-glow); line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 5px; }
+  .stat-card.violet .stat-num { color: var(--violet); text-shadow: 0 0 16px var(--violet-dim); }
+  .stat-card.green  .stat-num { color: var(--green);  text-shadow: 0 0 16px var(--green-dim); }
+
+  /* USERS */
+  .users-list { display: flex; flex-direction: column; gap: 6px; }
+  .user-row { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 11px 13px; display: flex; align-items: center; gap: 10px; }
+  .user-row-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan), var(--violet)); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: #000; flex-shrink: 0; }
+  .user-row-info { flex: 1; min-width: 0; }
+  .user-row-name { font-size: 13px; font-weight: 500; }
+  .user-row-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .user-dl-count { font-family: var(--font-mono); font-size: 11px; color: var(--cyan); background: var(--cyan-dim); border: 1px solid rgba(0,229,255,0.2); border-radius: 10px; padding: 2px 8px; flex-shrink: 0; }
+
+  /* UPLOAD */
+  .upload-area { border: 2px dashed var(--border2); border-radius: var(--r); padding: 32px 20px; text-align: center; margin-bottom: 14px; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
+  .upload-area:hover, .upload-area.drag { border-color: var(--cyan); background: var(--cyan-dim); }
+  .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-label { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .upload-label strong { color: var(--text); }
+  .form-group { margin-bottom: 12px; }
+  .form-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 6px; }
+  .form-select, .form-input { width: 100%; background: var(--card); border: 1px solid var(--border2); border-radius: var(--r2); color: var(--text); font-family: var(--font-body); font-size: 13px; padding: 10px 12px; outline: none; -webkit-appearance: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  .form-select:focus, .form-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-dim); }
+  .form-select option { background: #111; }
+  .btn-primary { width: 100%; background: var(--cyan); color: #000; border: none; border-radius: var(--r2); font-family: var(--font-head); font-size: 14px; font-weight: 700; padding: 13px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.3px; }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-danger { background: var(--red-dim); border: 1px solid rgba(255,61,90,0.3); border-radius: var(--r2); color: var(--red); font-family: var(--font-body); font-size: 12px; font-weight: 500; padding: 9px 14px; cursor: pointer; transition: all 0.15s; width: 100%; margin-top: 8px; }
+  .btn-danger:active { opacity: 0.7; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--card); border: 1px solid var(--border2); border-radius: 20px; padding: 10px 18px; font-size: 12px; font-weight: 500; color: var(--text); z-index: 9000; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(0,255,136,0.4); color: var(--green); }
+  .toast.error   { border-color: rgba(255,61,90,0.4);  color: var(--red); }
+
+  /* LOADING */
+  .loading { display: flex; align-items: center; justify-content: center; padding: 60px; flex-direction: column; gap: 12px; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+  /* MODULE COLOR THEMES */
+  .m0 { background: rgba(0,229,255,0.08);  color: var(--cyan); }
+  .m1 { background: rgba(180,77,255,0.08); color: var(--violet); }
+  .m2 { background: rgba(0,255,136,0.08);  color: var(--green); }
+  .m3 { background: rgba(255,180,0,0.08);  color: #ffb400; }
+  .m4 { background: rgba(255,61,90,0.08);  color: var(--red); }
+  .m5 { background: rgba(0,180,255,0.08);  color: #00b4ff; }
+  .m6 { background: rgba(255,100,150,0.08);color: #ff6496; }
+
+  /* ADMIN MODULE ROW */
+  .admin-mod-row { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); display: flex; align-items: center; gap: 10px; padding: 12px 13px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+  .admin-mod-row:active { border-color: var(--cyan); }
+  .admin-mod-count { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+
+  /* SLIDE-IN PANEL */
+  .panel { position: fixed; inset: 0; background: var(--black); z-index: 500; overflow-y: auto; padding: 16px; animation: slideUp 0.22s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .panel-back { background: none; border: none; color: var(--muted); font-size: 14px; cursor: pointer; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; padding: 0; }
+  .panel-back:active { color: var(--cyan); }
+
+  /* PAGE ANIM */
+  .page { animation: fadeUp 0.2s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .bottom-pad { height: 32px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Elite<span>Life</span></div>
+      <div class="user-badge">
+        <div class="user-avatar" id="userInitial">?</div>
+        <span id="userName">...</span>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="Search files across all modules…" autocomplete="off">
+      <button class="search-clear" id="searchClear">✕</button>
+    </div>
+  </div>
+
+  <div class="nav" id="navBar">
+    <button class="nav-btn active" data-page="modules">📚 Modules</button>
+    <button class="nav-btn" data-page="search">🔎 Search</button>
+    <button class="nav-btn admin-only" data-page="stats" style="display:none">📊 Stats</button>
+    <button class="nav-btn admin-only" data-page="users" style="display:none">👥 Users</button>
+    <button class="nav-btn admin-only" data-page="upload" style="display:none">➕ Upload</button>
+  </div>
+
+  <div class="main" id="mainContent">
+    <div class="loading"><div class="spinner"></div><div class="loading-text">Connecting…</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG — set this to your server's address.
+// On Termux: use your phone's local IP, e.g. http://192.168.1.x:8080
+// On Render/Railway: use your deployed URL, e.g. https://elitelife.onrender.com
+// ─────────────────────────────────────────────────────────────────────────────
+const API_BASE   = "http://localhost:8080";   // ← Change this
+const ADMIN_IDS  = [5852460298];              // ← Must match bot.py
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TELEGRAM MINI APP INIT
+// ─────────────────────────────────────────────────────────────────────────────
+const tg       = window.Telegram.WebApp;
+const tgUser   = tg.initDataUnsafe?.user || {};
+const isAdmin  = ADMIN_IDS.includes(Number(tgUser.id));
+
+tg.ready();
+tg.expand();
+tg.setHeaderColor('#000000');
+tg.setBackgroundColor('#000000');
+
+// User badge
+const initials = (tgUser.first_name || '?')[0].toUpperCase();
+document.getElementById('userInitial').textContent = initials;
+document.getElementById('userName').textContent = tgUser.first_name?.split(' ')[0] || 'Guest';
+
+// Show admin tabs
+if (isAdmin) {
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let allModules   = [];
+let allUsers     = [];
+let globalStats  = {};
+let currentPage  = 'modules';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function apiHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Telegram-User-Id': String(tgUser.id || ''),
+  };
+}
+
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API_BASE + path, {
+    ...opts,
+    headers: { ...apiHeaders(), ...(opts.headers || {}) },
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+  return res.json();
+}
+
+async function loadModules() {
+  allModules = await apiFetch('/api/modules');
+}
+
+async function loadStats() {
+  if (!isAdmin) return;
+  globalStats = await apiFetch('/api/stats');
+}
+
+async function loadUsers() {
+  if (!isAdmin) return;
+  allUsers = await apiFetch('/api/users');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => showPage(btn.dataset.page));
+});
+
+function showPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+  if      (page === 'modules') renderModules(main);
+  else if (page === 'search')  renderSearch(main);
+  else if (page === 'stats')   renderStats(main);
+  else if (page === 'users')   renderUsers(main);
+  else if (page === 'upload')  renderUpload(main);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODULES PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderModules(container) {
+  const wrap = el('div', 'page');
+  const label = el('div', 'section-label');
+  label.textContent = `${allModules.length} modules · S4`;
+  wrap.appendChild(label);
+
+  const grid = el('div', 'modules-grid');
+  allModules.forEach(mod => {
+    const card = el('div', 'module-card');
+    card.dataset.id = mod.id;
+
+    const hdr = el('div', 'module-header');
+    hdr.innerHTML = `
+      <div class="module-icon ${mod.color}">${mod.emoji}</div>
+      <div class="module-info">
+        <div class="module-name">${mod.name}</div>
+        <div class="module-meta">${mod.files.length} file${mod.files.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="module-chevron">›</div>
+    `;
+    hdr.addEventListener('click', () => {
+      const isOpen = card.classList.contains('open');
+      document.querySelectorAll('.module-card.open').forEach(c => c.classList.remove('open'));
+      if (!isOpen) card.classList.add('open');
+    });
+    card.appendChild(hdr);
+
+    const fl = el('div', 'file-list');
+    appendFileList(fl, mod);
+    card.appendChild(fl);
+    grid.appendChild(card);
+  });
+
+  wrap.appendChild(grid);
+  wrap.appendChild(el('div', 'bottom-pad'));
+  container.appendChild(wrap);
+}
+
+function appendFileList(container, mod) {
+  if (mod.files.length === 0) {
+    const empty = el('div');
+    empty.style.cssText = 'padding:14px;text-align:center;color:#444;font-size:12px;';
+    empty.textContent = '📭  No files yet';
+    container.appendChild(empty);
+    return;
+  }
+
+  const getAllBtn = el('button', 'get-all-btn');
+  getAllBtn.textContent = `📬  Get ALL ${mod.files.length} Files`;
+  getAllBtn.addEventListener('click', () => requestGetAll(mod, getAllBtn));
+  container.appendChild(getAllBtn);
+
+  mod.files.forEach(f => {
+    const row = el('div', 'file-row');
+    const ftIcon  = { audio:'🎵', video:'🎬', photo:'🖼️' };
+    const ftClass = { audio:'audio', video:'video', photo:'photo', document:'doc' };
+    const icon = ftIcon[f.file_type] || '📄';
+    const cls  = ftClass[f.file_type] || 'doc';
+
+    row.innerHTML = `
+      <div class="file-icon ${cls}">${icon}</div>
+      <div class="file-info">
+        <div class="file-name">${esc(f.filename)}</div>
+        <div class="file-tag">${f.tag}</div>
+      </div>
+    `;
+
+    const btnWrap = el('div');
+    btnWrap.style.cssText = 'display:flex;gap:6px;';
+
+    const dlBtn = el('button', 'dl-btn');
+    dlBtn.textContent = '↓';
+    dlBtn.title = 'Download';
+    dlBtn.addEventListener('click', () => requestDownload(f, mod, dlBtn));
+    btnWrap.appendChild(dlBtn);
+
+    if (isAdmin) {
+      const delBtn = el('button', 'dl-btn del-btn');
+      delBtn.textContent = '🗑';
+      delBtn.addEventListener('click', () => deleteFile(f, mod, row));
+      btnWrap.appendChild(delBtn);
+    }
+
+    row.appendChild(btnWrap);
+    container.appendChild(row);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEARCH PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderSearch(container) {
+  const wrap = el('div', 'page');
+  const label = el('div', 'section-label');
+  label.textContent = 'Search all files';
+  wrap.appendChild(label);
+
+  const results = el('div', 'search-results');
+  results.id = 'searchResults';
+
+  const hint = el('div', 'no-results');
+  hint.innerHTML = '<span>🔎</span>Type in the search bar above';
+  results.appendChild(hint);
+  wrap.appendChild(results);
+  container.appendChild(wrap);
+
+  document.getElementById('searchInput').focus();
+}
+
+function runSearch(q) {
+  const results = document.getElementById('searchResults');
+  if (!results) return;
+  results.innerHTML = '';
+
+  if (!q) {
+    results.innerHTML = '<div class="no-results"><span>🔎</span>Type to search across all modules</div>';
+    return;
+  }
+
+  const ql  = q.toLowerCase();
+  const hits = [];
+  allModules.forEach(mod => {
+    mod.files.forEach(f => {
+      if (f.filename.toLowerCase().includes(ql) || mod.name.toLowerCase().includes(ql)) {
+        hits.push({ f, mod });
+      }
+    });
+  });
+
+  if (!hits.length) {
+    results.innerHTML = `<div class="no-results"><span>😶</span>No results for "<strong>${esc(q)}</strong>"</div>`;
+    return;
+  }
+
+  hits.forEach(({ f, mod }) => {
+    const item = el('div', 'search-result-item');
+    const ftIcon  = { audio:'🎵', video:'🎬', photo:'🖼️' };
+    const ftClass = { audio:'audio', video:'video', photo:'photo', document:'doc' };
+    const icon = ftIcon[f.file_type] || '📄';
+    const cls  = ftClass[f.file_type] || 'doc';
+
+    item.innerHTML = `
+      <div class="file-icon ${cls}">${icon}</div>
+      <div class="file-info">
+        <div class="file-name">${highlight(esc(f.filename), q)}</div>
+        <div class="search-module-tag">${mod.emoji} ${mod.name}</div>
+      </div>
+    `;
+
+    const dlBtn = el('button', 'dl-btn');
+    dlBtn.textContent = '↓';
+    dlBtn.addEventListener('click', () => requestDownload(f, mod, dlBtn));
+    item.appendChild(dlBtn);
+    results.appendChild(item);
+  });
+}
+
+function highlight(text, q) {
+  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return text.replace(re, '<mark style="background:rgba(0,229,255,0.2);color:var(--cyan);border-radius:2px">$1</mark>');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATS PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderStats(container) {
+  const wrap = el('div', 'page');
+  const s = globalStats;
+
+  wrap.innerHTML = `
+    <div class="section-label">Global Overview</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num">${s.total_users ?? 0}</div>
+        <div class="stat-label">👥 Total Users</div>
+      </div>
+      <div class="stat-card violet">
+        <div class="stat-num">${s.total_downloads ?? 0}</div>
+        <div class="stat-label">📥 Downloads</div>
+      </div>
+      <div class="stat-card full green">
+        <div class="stat-num" style="font-size:15px;line-height:1.3">${s.top_module ?? '—'}</div>
+        <div class="stat-label">🏆 Most Downloaded · ${s.top_count ?? 0} times</div>
+      </div>
+    </div>
+    <div class="section-label">Downloads per Module</div>
+  `;
+
+  const modDl     = s.mod_downloads || {};
+  const maxDl     = Math.max(1, ...Object.values(modDl));
+  const fileCounts = s.file_counts || {};
+
+  allModules.forEach(mod => {
+    const dl  = modDl[mod.id] || 0;
+    const pct = Math.round((dl / maxDl) * 100);
+    const row = el('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:10px;';
+    row.innerHTML = `
+      <div style="font-size:15px;flex-shrink:0">${mod.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mod.name}</div>
+        <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--cyan);border-radius:2px;box-shadow:0 0 6px var(--cyan-glow);transition:width 0.6s ease"></div>
+        </div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);flex-shrink:0;text-align:right">
+        ${dl} dl<br><span style="color:var(--muted2)">${fileCounts[mod.id] || 0} files</span>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+
+  wrap.appendChild(el('div', 'bottom-pad'));
+  container.appendChild(wrap);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USERS PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderUsers(container) {
+  const wrap = el('div', 'page');
+  const label = el('div', 'section-label');
+  label.textContent = `${allUsers.length} users registered`;
+  wrap.appendChild(label);
+
+  const list = el('div', 'users-list');
+  allUsers.forEach(u => {
+    const row = el('div', 'user-row');
+    const initial = (u.first_name || '?')[0].toUpperCase();
+    const uname   = u.username ? `@${u.username}` : `#${u.user_id}`;
+    row.innerHTML = `
+      <div class="user-row-avatar">${initial}</div>
+      <div class="user-row-info">
+        <div class="user-row-name">${esc(u.first_name)}</div>
+        <div class="user-row-meta">${uname}</div>
+      </div>
+      <div class="user-dl-count">${u.dl_count} dl</div>
+    `;
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => showUserActivity(u));
+    list.appendChild(row);
+  });
+
+  wrap.appendChild(list);
+  wrap.appendChild(el('div', 'bottom-pad'));
+  container.appendChild(wrap);
+}
+
+async function showUserActivity(u) {
+  const panel = el('div', 'panel');
+  panel.innerHTML = `<div class="loading"><div class="spinner"></div><div class="loading-text">Loading…</div></div>`;
+  document.getElementById('app').appendChild(panel);
+
+  const back = el('button', 'panel-back');
+  back.innerHTML = '← Back';
+  back.addEventListener('click', () => panel.remove());
+
+  try {
+    const data = await apiFetch(`/api/users/${u.user_id}/activity`);
+    panel.innerHTML = '';
+    panel.appendChild(back);
+
+    const label = el('div', 'section-label');
+    label.textContent = `${(u.first_name || '?')[0].toUpperCase()} ${u.first_name} · activity`;
+    panel.appendChild(label);
+
+    if (!data.activity?.length) {
+      const empty = el('div', 'no-results');
+      empty.innerHTML = '<span>📭</span>No downloads yet';
+      panel.appendChild(empty);
+      return;
+    }
+
+    data.activity.forEach(l => {
+      const item = el('div', 'search-result-item');
+      item.style.marginBottom = '6px';
+      item.innerHTML = `
+        <div class="file-icon doc">📄</div>
+        <div class="file-info">
+          <div class="file-name">${esc(l.filename)}</div>
+          <div class="file-tag">${l.downloaded_at}</div>
+        </div>
+      `;
+      panel.appendChild(item);
+    });
+
+  } catch (e) {
+    panel.innerHTML = `<div class="no-results"><span>⚠️</span>Failed to load</div>`;
+    panel.prepend(back);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UPLOAD PAGE (ADMIN)
+// ─────────────────────────────────────────────────────────────────────────────
+function renderUpload(container) {
+  const wrap = el('div', 'page');
+
+  // Note: actual file upload to the bot is not possible directly from the Mini App
+  // because Telegram Bot files must be uploaded via the bot itself.
+  // The upload panel here shows admin instructions + manage existing files.
+  wrap.innerHTML = `
+    <div class="section-label">Upload Study Files</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;line-height:1.7;color:var(--muted)">
+        📎 To upload files, use the bot directly:<br>
+        1. Open the bot chat<br>
+        2. Type <code style="background:var(--border);padding:1px 5px;border-radius:4px;color:var(--cyan)">/manage</code><br>
+        3. Pick a module and send your files<br><br>
+        👇 <strong style="color:var(--text)">Manage existing files below</strong>
+      </div>
+    </div>
+    <div class="section-label">Manage Files</div>
+  `;
+
+  allModules.forEach(mod => {
+    const row = el('div', 'admin-mod-row');
+    row.innerHTML = `
+      <div style="font-size:16px">${mod.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mod.name}</div>
+      </div>
+      <div class="admin-mod-count">${mod.files.length} files</div>
+      <div style="color:var(--muted2);font-size:12px">›</div>
+    `;
+    row.addEventListener('click', () => showModuleAdmin(mod));
+    wrap.appendChild(row);
+  });
+
+  wrap.appendChild(el('div', 'bottom-pad'));
+  container.appendChild(wrap);
+}
+
+function showModuleAdmin(mod) {
+  const panel = el('div', 'panel');
+  const back  = el('button', 'panel-back');
+  back.innerHTML = '← Back';
+  back.addEventListener('click', () => {
+    panel.remove();
+    showPage('upload');
+  });
+  panel.appendChild(back);
+
+  const label = el('div', 'section-label');
+  label.textContent = `${mod.emoji} ${mod.name}`;
+  panel.appendChild(label);
+
+  if (!mod.files.length) {
+    const empty = el('div', 'no-results');
+    empty.innerHTML = '<span>📭</span>No files in this module';
+    panel.appendChild(empty);
+  } else {
+    const list = el('div');
+    mod.files.forEach(f => {
+      const item = el('div', 'search-result-item');
+      item.style.marginBottom = '6px';
+      item.innerHTML = `
+        <div class="file-icon doc">📄</div>
+        <div class="file-info">
+          <div class="file-name">${esc(f.filename)}</div>
+          <div class="file-tag">${f.tag}</div>
+        </div>
+      `;
+      const delBtn = el('button', 'dl-btn del-btn');
+      delBtn.textContent = '🗑';
+      delBtn.addEventListener('click', async () => {
+        try {
+          await apiFetch(`/api/files/${f.id}`, { method: 'DELETE' });
+          mod.files = mod.files.filter(x => x.id !== f.id);
+          item.remove();
+          showToast('File deleted', 'success');
+        } catch (e) {
+          showToast('Delete failed', 'error');
+        }
+      });
+      item.appendChild(delBtn);
+      list.appendChild(item);
+    });
+    panel.appendChild(list);
+
+    const clearAll = el('button', 'btn-danger');
+    clearAll.textContent = `🗑️  Delete ALL ${mod.files.length} Files`;
+    clearAll.addEventListener('click', async () => {
+      if (!confirm(`Delete all ${mod.files.length} files in "${mod.name}"?`)) return;
+      try {
+        await apiFetch(`/api/modules/${mod.id}/files`, { method: 'DELETE' });
+        mod.files = [];
+        showToast('All files cleared', 'success');
+        panel.remove();
+        showPage('upload');
+      } catch (e) {
+        showToast('Failed', 'error');
+      }
+    });
+    panel.appendChild(clearAll);
+  }
+
+  document.getElementById('app').appendChild(panel);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOWNLOAD ACTIONS → POST to server → bot sends file
+// ─────────────────────────────────────────────────────────────────────────────
+async function requestDownload(f, mod, btn) {
+  btn.classList.add('spin');
+  btn.textContent = '↻';
+  try {
+    await apiFetch('/api/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        action:     'download',
+        file_id:    f.id,
+        user_id:    tgUser.id,
+        username:   tgUser.username || '',
+        first_name: tgUser.first_name || '',
+      }),
+    });
+    showToast(`📬 ${f.filename} sent to your chat!`, 'success');
+  } catch (e) {
+    showToast('Failed to request file', 'error');
+  } finally {
+    btn.classList.remove('spin');
+    btn.textContent = '↓';
+  }
+}
+
+async function requestGetAll(mod, btn) {
+  btn.textContent = '⏳ Sending…';
+  btn.style.pointerEvents = 'none';
+  try {
+    await apiFetch('/api/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        action:     'getall',
+        module_id:  mod.id,
+        user_id:    tgUser.id,
+        username:   tgUser.username || '',
+        first_name: tgUser.first_name || '',
+      }),
+    });
+    showToast(`📬 ${mod.files.length} files queued for your chat!`, 'success');
+  } catch (e) {
+    showToast('Failed to request files', 'error');
+  } finally {
+    btn.textContent = `📬  Get ALL ${mod.files.length} Files`;
+    btn.style.pointerEvents = '';
+  }
+}
+
+async function deleteFile(f, mod, rowEl) {
+  try {
+    await apiFetch(`/api/files/${f.id}`, { method: 'DELETE' });
+    mod.files = mod.files.filter(x => x.id !== f.id);
+    rowEl.remove();
+    showToast(`🗑 Deleted "${f.filename}"`, 'success');
+  } catch (e) {
+    showToast('Delete failed', 'error');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEARCH WIRING
+// ─────────────────────────────────────────────────────────────────────────────
+const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  searchClear.style.display = q ? 'block' : 'none';
+  if (q) {
+    showPage('search');
+    runSearch(q);
+  } else if (currentPage === 'search') {
+    runSearch('');
+  }
+});
+
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchClear.style.display = 'none';
+  if (currentPage === 'search') runSearch('');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOM HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function el(tag, cls = '') {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  return e;
+}
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const fetches = [loadModules()];
+    if (isAdmin) fetches.push(loadStats(), loadUsers());
+    await Promise.all(fetches);
+    showPage('modules');
+  } catch (e) {
+    document.getElementById('mainContent').innerHTML = `
+      <div class="no-results">
+        <span>⚠️</span>
+        <strong>Can't reach the server</strong><br>
+        <small style="color:var(--muted2)">${e.message}</small><br><br>
+        <small>Make sure server.py is running and<br>
+        <code style="color:var(--cyan)">API_BASE</code> is set correctly in this file.</small>
+      </div>`;
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
